@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Support Intelligence Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600&family=Cabinet+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0e0f13;--surface:#16181f;--surface2:#1e2129;--surface3:#232630;--border:#2a2d38;--border2:#333748;--accent:#f0a500;--g:#3dd68c;--r:#e85d5d;--b:#5b8af0;--p:#c77dff;--o:#f8961e;--c:#4cc9f0;--text:#e8eaf2;--muted:#7a7f96;--dim:#555b72}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Cabinet Grotesk',sans-serif;font-size:14px;line-height:1.5}
+.hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
+.hdr-l{display:flex;align-items:center;gap:14px}
+.dot{width:9px;height:9px;background:var(--accent);border-radius:50%;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.3)}}
+.hdr h1{font-family:'Fraunces',serif;font-size:19px;font-weight:600}
+.hdr-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:1px}
+.badge{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:4px 11px;font-family:'DM Mono',monospace;font-size:10px;color:var(--accent)}
+.badge-g{color:var(--g);border-color:rgba(61,214,140,.3);background:rgba(61,214,140,.06)}
+.nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;display:flex}
+.nt{padding:11px 17px;font-size:12px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;transition:all .2s;white-space:nowrap}
+.nt:hover{color:var(--text)}.nt.active{color:var(--accent);border-bottom-color:var(--accent)}
+.main{padding:20px 28px;max-width:1440px;margin:0 auto}
+.tc{display:none}.tc.active{display:block}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.g3{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px}
+.fcard{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:16px}
+.ct{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.cs{font-size:11px;color:var(--muted);margin-bottom:14px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi.y::before{background:var(--accent)}.kpi.g::before{background:var(--g)}.kpi.r::before{background:var(--r)}.kpi.b::before{background:var(--b)}.kpi.p::before{background:var(--p)}.kpi.c::before{background:var(--c)}
+.kl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.kv{font-family:'Fraunces',serif;font-size:28px;font-weight:600;line-height:1;margin-bottom:5px}
+.ks{font-size:11px;color:var(--muted)}
+.kbench{font-size:10px;margin-top:4px;display:flex;align-items:center;gap:4px}
+.bench-ok{color:var(--g)}.bench-warn{color:var(--accent)}.bench-bad{color:var(--r)}
+.sr{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.sl{font-size:12px;color:var(--muted);width:100px}
+.st{flex:1;height:7px;background:var(--border);border-radius:4px;overflow:hidden}
+.sf{height:100%;border-radius:4px}
+.sv{font-family:'DM Mono',monospace;font-size:11px;width:44px;text-align:right}
+.acc-wrap{display:flex;flex-direction:column;gap:8px}
+.acat{border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.acat-hdr{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--surface2);cursor:pointer;user-select:none;transition:background .15s}
+.acat-hdr:hover{background:var(--surface3)}
+.acat.open .arr{transform:rotate(90deg)}
+.arr{font-size:10px;color:var(--muted);transition:transform .2s;min-width:10px}
+.cat-n{flex:1;font-size:13px;font-weight:700}
+.cat-bw{width:90px;height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.cat-bf{height:100%;border-radius:3px}
+.cat-pct{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);width:40px;text-align:right}
+.cat-tot{font-family:'DM Mono',monospace;font-size:12px;min-width:52px;text-align:right}
+.sub-body{display:none;padding:0 14px 12px}
+.acat.open .sub-body{display:block}
+.srow{border:1px solid var(--border);border-radius:7px;margin-top:8px;overflow:hidden}
+.srow-hdr{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface3);cursor:pointer;user-select:none}
+.srow-hdr:hover{background:#272a35}
+.sarr{font-size:9px;color:var(--dim);transition:transform .2s;min-width:8px}
+.srow.sopen .sarr{transform:rotate(90deg)}
+.s-ico{font-size:13px;min-width:22px;text-align:center}
+.s-name{flex:1;font-size:12px;font-weight:600}
+.s-bw{width:60px;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.s-bf{height:100%;border-radius:2px;opacity:.65}
+.s-cnt{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);min-width:46px;text-align:right}
+.stag{font-size:9px;padding:2px 6px;border-radius:3px;font-weight:700;min-width:30px;text-align:center}
+.th{background:rgba(232,93,93,.14);color:var(--r)}.tm{background:rgba(240,165,0,.12);color:var(--accent)}.tl{background:rgba(61,214,140,.1);color:var(--g)}
+.s-action{font-size:10px;color:var(--b);min-width:90px;text-align:right}
+.tickets-panel{display:none;padding:10px 12px 12px}
+.srow.sopen .tickets-panel{display:block}
+.tp-label{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--dim);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.tp-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.ticket-card{background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:10px 12px;margin-bottom:6px}
+.tk-subj{font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px;display:flex;gap:8px}
+.tk-subj::before{content:'#';font-family:'DM Mono',monospace;font-size:10px;color:var(--dim);margin-top:2px;flex-shrink:0}
+.tk-desc{font-size:11px;color:var(--muted);line-height:1.5;font-style:italic;border-left:2px solid var(--border2);padding-left:8px;margin-top:4px}
+.dtbl{width:100%;border-collapse:collapse}
+.dtbl th{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding:6px 10px;text-align:left;border-bottom:1px solid var(--border)}
+.dtbl td{padding:9px 10px;font-size:12px;border-bottom:1px solid rgba(42,45,56,.4)}
+.dtbl tr:last-child td{border-bottom:none}
+.dtbl tr:hover td{background:rgba(255,255,255,.02)}
+.pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.pg{background:rgba(61,214,140,.12);color:var(--g)}.pr{background:rgba(232,93,93,.12);color:var(--r)}.py{background:rgba(240,165,0,.12);color:var(--accent)}.pb{background:rgba(91,138,240,.12);color:var(--b)}
+.sec-hd{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin-bottom:10px;margin-top:4px}
+.mini-label{font-size:10px;color:var(--dim);margin-bottom:5px}
+.status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+canvas{display:block}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-l">
+    <div class="dot"></div>
+    <div>
+      <h1>Support Intelligence</h1>
+      <div class="hdr-meta" id="hdrMeta"></div>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <div class="badge badge-g" id="updatedBadge"></div>
+    <div class="badge" id="periodBadge"></div>
+  </div>
+</div>
+
+<div class="nav">
+  <div class="nt active" onclick="showTab('overview',this)">Overview</div>
+  <div class="nt" onclick="showTab('issues',this)">Issue Breakdown</div>
+  <div class="nt" onclick="showTab('productivity',this)">Productivity & SLA</div>
+  <div class="nt" onclick="showTab('agents',this)">Agent View</div>
+  <div class="nt" onclick="showTab('sentiment',this)">Sentiment</div>
+  <div class="nt" onclick="showTab('timeline',this)">Timeline</div>
+  <div class="nt" onclick="showTab('suggestions',this)">💡 Suggestions</div>
+</div>
+
+<div class="main">
+
+<!-- ══ OVERVIEW ══════════════════════════════════════════════════════ -->
+<div class="tc active" id="tab-overview">
+  <div class="g5" id="kpiRow"></div>
+  <div class="g3">
+    <div class="card"><div class="ct">Weekly Ticket Volume</div><div class="cs" id="ovLineSub"></div><canvas id="ovLine" height="160"></canvas></div>
+    <div class="card"><div class="ct">Volume by Category</div><div class="cs">Classified from subject + description</div><canvas id="ovDonut" height="160"></canvas></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="ct">Top Sub-Issues This Week</div><div class="cs">By ticket count</div><canvas id="ovBar" height="220"></canvas></div>
+    <div class="card">
+      <div class="ct">Ticket Status Breakdown</div><div class="cs" id="statusSub"></div>
+      <div id="statusBars" style="margin-top:8px"></div>
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+        <div class="ct" style="margin-bottom:10px">SLA Benchmark Status</div>
+        <div id="benchmarkPanel"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ISSUES ════════════════════════════════════════════════════════ -->
+<div class="tc" id="tab-issues">
+  <div class="g2" style="margin-bottom:0;align-items:start">
+    <div>
+      <div class="sec-hd">Click a category → then a sub-issue to see live tickets</div>
+      <div class="acc-wrap" id="accordion"></div>
+    </div>
+    <div style="position:sticky;top:120px">
+      <div class="sec-hd">Weekly trend</div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="ct">Issue Trend</div>
+        <div class="cs" id="trendLbl">Select a sub-issue →</div>
+        <canvas id="trendChart" height="150"></canvas>
+      </div>
+      <div class="card">
+        <div class="ct">Category Distribution</div>
+        <div class="cs">Share of classified tickets</div>
+        <canvas id="catDistBar" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PRODUCTIVITY ══════════════════════════════════════════════════ -->
+<div class="tc" id="tab-productivity">
+  <div class="g5" id="prodKpis"></div>
+  <div class="g2">
+    <div class="card">
+      <div class="ct">Ticket Status Distribution</div>
+      <div class="cs">Current week snapshot</div>
+      <canvas id="statusPie" height="240"></canvas>
+    </div>
+    <div class="card">
+      <div class="ct">SLA Performance vs Benchmarks</div>
+      <div class="cs">Industry targets for MF support operations</div>
+      <div id="slaPanel" style="display:flex;flex-direction:column;gap:14px;margin-top:8px"></div>
+    </div>
+  </div>
+  <div class="fcard">
+    <div class="ct">Daily Volume Trend</div>
+    <div class="cs">Ticket intake per day this period</div>
+    <canvas id="prodDailyChart" height="130"></canvas>
+  </div>
+</div>
+
+<!-- ══ AGENT VIEW ════════════════════════════════════════════════════ -->
+<div class="tc" id="tab-agents">
+  <div class="fcard">
+    <div class="ct">Agent Productivity Table</div>
+    <div class="cs">Sorted by tickets handled · FRT = First Response Time · TAT = Resolution Time</div>
+    <table class="dtbl">
+      <thead>
+        <tr>
+          <th>#</th><th>Agent</th><th>Tickets</th><th>Resolved</th>
+          <th>Resolution %</th><th>Avg FRT</th><th>Avg TAT</th><th>FRT Status</th>
+        </tr>
+      </thead>
+      <tbody id="agentTbody"></tbody>
+    </table>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="ct">Tickets by Agent</div>
+      <div class="cs">Total handled this period</div>
+      <canvas id="agentBar" height="260"></canvas>
+    </div>
+    <div class="card">
+      <div class="ct">Avg FRT by Agent (minutes)</div>
+      <div class="cs">Lower is better · Benchmark: &lt;240 min (4 hrs)</div>
+      <canvas id="agentFrtBar" height="260"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SENTIMENT ════════════════════════════════════════════════════ -->
+<div class="tc" id="tab-sentiment">
+  <div class="g2">
+    <div class="card"><div class="ct">Sentiment Breakdown</div><div class="cs">Keyword-based classification</div><canvas id="sentPie" height="260"></canvas></div>
+    <div class="card">
+      <div class="ct">Satisfaction Gap Analysis</div><div class="cs">What we can measure vs what we need</div>
+      <div id="sentGapBars" style="margin-top:16px;display:flex;flex-direction:column;gap:16px"></div>
+      <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">
+        <div class="ct" style="margin-bottom:10px">3 Priority Actions</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="background:var(--surface2);border-radius:6px;padding:10px 12px;border-left:2px solid var(--r)"><div style="font-size:12px;font-weight:700;margin-bottom:2px">Enable CSAT Surveys</div><div style="font-size:11px;color:var(--muted)">Survey not sent / No Response seen on all tickets — customers are never asked for feedback. Enable in Zoho Desk → Customer Happiness.</div></div>
+          <div style="background:var(--surface2);border-radius:6px;padding:10px 12px;border-left:2px solid var(--accent)"><div style="font-size:12px;font-weight:700;margin-bottom:2px">Proactive Failure Alerts</div><div style="font-size:11px;color:var(--muted)">SIP failures and redemption issues are known at system level — notify before customer writes in.</div></div>
+          <div style="background:var(--surface2);border-radius:6px;padding:10px 12px;border-left:2px solid var(--g)"><div style="font-size:12px;font-weight:700;margin-bottom:2px">Reduce Unassigned Queue</div><div style="font-size:11px;color:var(--muted)">53 tickets currently unassigned — these likely have the worst FRT.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TIMELINE ══════════════════════════════════════════════════════ -->
+<div class="tc" id="tab-timeline">
+  <div class="fcard"><div class="ct">Daily Ticket Volume</div><div class="cs">Bar = daily count · Line = moving average</div><canvas id="tlChart" height="180"></canvas></div>
+  <div class="g2">
+    <div class="card"><div class="ct">Volume by Agent Week-over-Week</div><div class="cs">Top 5 agents</div><canvas id="agentWk" height="220"></canvas></div>
+    <div class="card"><div class="ct">Daily Heatmap</div><div class="cs">Intensity by day</div><div id="heatmap" style="margin-top:4px"></div></div>
+  </div>
+</div>
+
+<!-- ══ SUGGESTIONS ═══════════════════════════════════════════════════ -->
+<div class="tc" id="tab-suggestions">
+  <div style="background:linear-gradient(135deg,rgba(240,165,0,.08),rgba(91,138,240,.06));border:1px solid var(--border);border-radius:12px;padding:24px 28px;margin-bottom:20px">
+    <h2 style="font-family:'Fraunces',serif;font-size:22px;font-weight:600;margin-bottom:6px">Recommendations to Reduce Tickets & Improve Quality</h2>
+    <p style="font-size:13px;color:var(--muted);max-width:640px;line-height:1.6">Based on your live ticket data combined with industry best practices from fintech/MF support operations.</p>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:16px" id="sugGrid"></div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// ── EMBEDDED DATA (auto-replaced each week by Apps Script) ────────────
+const D = INJECT_DATA_HERE;
+// ─────────────────────────────────────────────────────────────────────
+
+Chart.defaults.color='#7a7f96';
+Chart.defaults.font.family='Cabinet Grotesk';
+Chart.defaults.font.size=11;
+let trendChart=null;
+
+// ── Header ────────────────────────────────────────────────────────────
+document.getElementById('hdrMeta').textContent=`Zoho Desk · ${D.meta.period_start} – ${D.meta.period_end} · ${D.meta.total_tickets.toLocaleString()} tickets`;
+document.getElementById('updatedBadge').textContent=`● Updated ${D.meta.generated}`;
+document.getElementById('periodBadge').textContent=`${D.meta.period_start} → ${D.meta.period_end}`;
+
+// ── Helpers ───────────────────────────────────────────────────────────
+function fmtMin(m){if(!m&&m!==0)return'—';if(m<60)return m+'m';return Math.floor(m/60)+'h '+(m%60)+'m';}
+function fmtHrs(h){if(!h&&h!==0)return'—';if(h<24)return h.toFixed(1)+'h';return(h/24).toFixed(1)+'d';}
+function benchColor(val,good,warn){if(val===null||val===undefined)return'var(--dim)';return val<=good?'var(--g)':val<=warn?'var(--accent)':'var(--r)';}
+function benchLabel(val,good,warn,unit=''){if(val===null||val===undefined)return'No data';return val<=good?`✓ Good (${val}${unit})`:`⚠ Above target (${val}${unit})`;}
+
+// ── KPI Row (Overview) ────────────────────────────────────────────────
+const p=D.productivity;
+const wv=D.weekly.values, wl=D.weekly.labels;
+const peakWk=Math.max(...wv);
+const frtColor=benchColor(p.avg_frt_min,120,240);
+const tatColor=benchColor(p.avg_tat_hrs,24,48);
+document.getElementById('kpiRow').innerHTML=`
+  <div class="kpi y"><div class="kl">Total Tickets</div><div class="kv" style="color:var(--accent)">${D.meta.total_tickets.toLocaleString()}</div><div class="ks">${D.meta.period_start} → ${D.meta.period_end}</div></div>
+  <div class="kpi b"><div class="kl">Avg FRT</div><div class="kv" style="color:${frtColor}">${fmtMin(p.avg_frt_min)}</div><div class="ks">Median: ${fmtMin(p.median_frt_min)}</div><div class="kbench" style="color:${frtColor}">${p.avg_frt_min<=120?'✓ Within 2hr target':'⚠ Target: &lt;2 hrs'}</div></div>
+  <div class="kpi g"><div class="kl">Avg Resolution TAT</div><div class="kv" style="color:${tatColor}">${fmtHrs(p.avg_tat_hrs)}</div><div class="ks">Median: ${fmtHrs(p.median_tat_hrs)}</div><div class="kbench" style="color:${tatColor}">${p.avg_tat_hrs<=24?'✓ Within 24hr target':'⚠ Target: &lt;24 hrs'}</div></div>
+  <div class="kpi r"><div class="kl">Resolution Rate</div><div class="kv" style="color:${benchColor(100-p.resolution_rate_pct,15,30)}">${p.resolution_rate_pct}%</div><div class="ks">${p.resolved_count} of ${D.meta.total_tickets} resolved</div></div>
+  <div class="kpi p"><div class="kl">Distressed Tickets</div><div class="kv" style="color:var(--r)">${D.sentiment.negative_pct}%</div><div class="ks">${D.sentiment.negative.toLocaleString()} with urgency signals</div></div>`;
+
+document.getElementById('ovLineSub').textContent=`${D.meta.period_start} – ${D.meta.period_end}`;
+
+// ── Overview Charts ───────────────────────────────────────────────────
+new Chart(document.getElementById('ovLine'),{type:'line',data:{labels:wl,datasets:[{data:wv,borderColor:'#f0a500',backgroundColor:'rgba(240,165,0,.07)',borderWidth:2,pointRadius:4,fill:true,tension:.35}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(42,45,56,.5)'}},y:{grid:{color:'rgba(42,45,56,.5)'},beginAtZero:false}}}});
+new Chart(document.getElementById('ovDonut'),{type:'doughnut',data:{labels:D.taxonomy.map(c=>c.name),datasets:[{data:D.taxonomy.map(c=>c.total),backgroundColor:D.taxonomy.map(c=>c.color),borderWidth:0,hoverOffset:6}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{padding:8,boxWidth:10,font:{size:10}}}},cutout:'62%'}});
+const allSubs=D.taxonomy.flatMap(c=>c.subs.map(s=>({...s,cc:c.color}))).sort((a,b)=>b.count-a.count).slice(0,10);
+new Chart(document.getElementById('ovBar'),{type:'bar',data:{labels:allSubs.map(s=>s.name),datasets:[{data:allSubs.map(s=>s.count),backgroundColor:allSubs.map(s=>s.cc+'99'),borderColor:allSubs.map(s=>s.cc),borderWidth:1,borderRadius:3}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(42,45,56,.5)'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
+
+// Status bars
+const statuses=[{l:'Resolved',v:p.resolved_count,c:'var(--g)'},{l:'Pending',v:p.pending_count,c:'var(--accent)'},{l:'On Hold',v:p.on_hold_count,c:'var(--b)'},{l:'Open',v:p.open_count,c:'var(--r)'}];
+const stTotal=statuses.reduce((a,s)=>a+s.v,0);
+document.getElementById('statusSub').textContent=`${stTotal} tickets this period`;
+document.getElementById('statusBars').innerHTML=statuses.map(s=>`<div class="sr"><span class="sl">${s.l}</span><div class="st"><div class="sf" style="width:${(s.v/stTotal*100).toFixed(1)}%;background:${s.c}"></div></div><span class="sv" style="color:${s.c}">${s.v}</span></div>`).join('');
+
+document.getElementById('benchmarkPanel').innerHTML=`
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--muted)">FRT avg</span><span style="color:${frtColor};font-weight:700">${fmtMin(p.avg_frt_min)} ${p.avg_frt_min<=120?'✓':'⚠ target &lt;2hrs'}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--muted)">TAT avg</span><span style="color:${tatColor};font-weight:700">${fmtHrs(p.avg_tat_hrs)} ${p.avg_tat_hrs<=24?'✓':'⚠ target &lt;24hrs'}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--muted)">Resolution rate</span><span style="color:${benchColor(100-p.resolution_rate_pct,15,30)};font-weight:700">${p.resolution_rate_pct}% ${p.resolution_rate_pct>=85?'✓':'⚠ target &gt;85%'}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--muted)">CSAT</span><span style="color:var(--dim);font-weight:700">Not enabled yet</span></div>
+  </div>`;
+
+// ── Productivity Tab ──────────────────────────────────────────────────
+document.getElementById('prodKpis').innerHTML=`
+  <div class="kpi y"><div class="kl">Avg FRT</div><div class="kv" style="color:${frtColor}">${fmtMin(p.avg_frt_min)}</div><div class="ks">Median ${fmtMin(p.median_frt_min)} · ${p.avg_frt_min<=120?'<b style=color:var(--g)>Within target</b>':'<b style=color:var(--r)>Above target</b>'}</div></div>
+  <div class="kpi g"><div class="kl">Avg Resolution TAT</div><div class="kv" style="color:${tatColor}">${fmtHrs(p.avg_tat_hrs)}</div><div class="ks">Median ${fmtHrs(p.median_tat_hrs)} · ${p.avg_tat_hrs<=24?'<b style=color:var(--g)>Within target</b>':'<b style=color:var(--r)>Above target</b>'}</div></div>
+  <div class="kpi b"><div class="kl">Resolved</div><div class="kv" style="color:var(--b)">${p.resolved_count}</div><div class="ks">${p.resolution_rate_pct}% of ${D.meta.total_tickets} tickets</div></div>
+  <div class="kpi r"><div class="kl">Still Open / Pending</div><div class="kv" style="color:var(--r)">${p.open_count+p.pending_count}</div><div class="ks">${p.open_count} open · ${p.pending_count} pending</div></div>
+  <div class="kpi p"><div class="kl">On Hold</div><div class="kv" style="color:var(--p)">${p.on_hold_count}</div><div class="ks">Awaiting customer or 3rd party</div></div>`;
+
+new Chart(document.getElementById('statusPie'),{type:'doughnut',data:{labels:statuses.map(s=>s.l),datasets:[{data:statuses.map(s=>s.v),backgroundColor:['#3dd68c','#f0a500','#5b8af0','#e85d5d'],borderWidth:0,hoverOffset:6}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{padding:14,boxWidth:12}}},cutout:'60%'}});
+
+const slaItems=[
+  {label:'First Response Time',val:p.avg_frt_min,unit:'min',good:120,warn:240,fmt:fmtMin,target:'Target: <2 hours (120 min)'},
+  {label:'Resolution TAT',val:p.avg_tat_hrs,unit:'hrs',good:24,warn:48,fmt:fmtHrs,target:'Target: <24 hours'},
+  {label:'Resolution Rate',val:100-p.resolution_rate_pct,unit:'%',good:15,warn:30,fmt:v=>`${p.resolution_rate_pct}%`,target:'Target: >85% resolved'},
+];
+document.getElementById('slaPanel').innerHTML=slaItems.map(s=>{
+  const c=benchColor(s.val,s.good,s.warn);
+  const pct=Math.min(s.val/s.warn*100,100);
+  return`<div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+      <span style="font-size:12px;font-weight:600">${s.label}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:12px;color:${c};font-weight:700">${s.fmt(s.val)}</span>
+    </div>
+    <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:4px">
+      <div style="height:100%;width:${pct}%;background:${c};border-radius:4px;transition:width 1s"></div>
+    </div>
+    <div style="font-size:10px;color:var(--dim)">${s.target}</div>
+  </div>`;}).join('');
+
+new Chart(document.getElementById('prodDailyChart'),{type:'bar',data:{labels:D.daily.labels,datasets:[{data:D.daily.values,backgroundColor:'rgba(240,165,0,.4)',borderColor:'rgba(240,165,0,.7)',borderWidth:1,borderRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(42,45,56,.5)'},beginAtZero:true}}}});
+
+// ── Agent Tab ─────────────────────────────────────────────────────────
+const agents=Object.entries(p.agent_stats).sort((a,b)=>b[1].total-a[1].total);
+const agentTbody=document.getElementById('agentTbody');
+agents.forEach(([name,a],i)=>{
+  const resPct=a.total>0?Math.round(a.resolved/a.total*100):0;
+  const frtOk=a.avg_frt_min!==null&&a.avg_frt_min<=120;
+  const frtWarn=a.avg_frt_min!==null&&a.avg_frt_min<=240;
+  const frtC=a.avg_frt_min===null?'var(--dim)':frtOk?'var(--g)':frtWarn?'var(--accent)':'var(--r)';
+  agentTbody.innerHTML+=`<tr>
+    <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--dim)">${String(i+1).padStart(2,'0')}</td>
+    <td style="font-weight:600">${name}</td>
+    <td style="font-family:'DM Mono',monospace">${a.total}</td>
+    <td style="font-family:'DM Mono',monospace">${a.resolved}</td>
+    <td><span class="pill ${resPct>=85?'pg':resPct>=60?'py':'pr'}">${resPct}%</span></td>
+    <td style="font-family:'DM Mono',monospace;color:${frtC}">${fmtMin(a.avg_frt_min)}</td>
+    <td style="font-family:'DM Mono',monospace">${fmtHrs(a.avg_tat_hrs)}</td>
+    <td><span class="pill ${frtOk?'pg':frtWarn?'py':'pr'}">${a.avg_frt_min===null?'No data':frtOk?'On target':frtWarn?'Borderline':'Slow'}</span></td>
+  </tr>`;
+});
+
+const top10Agents=agents.slice(0,10);
+const agColors=['#f0a500','#3dd68c','#5b8af0','#e85d5d','#c77dff','#f8961e','#4cc9f0','#06d6a0','#e9c46a','#264653'];
+new Chart(document.getElementById('agentBar'),{type:'bar',data:{labels:top10Agents.map(a=>a[0]),datasets:[{data:top10Agents.map(a=>a[1].total),backgroundColor:agColors,borderRadius:4}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(42,45,56,.5)'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
+
+const agentsWithFrt=agents.filter(a=>a[1].avg_frt_min!==null).slice(0,10);
+new Chart(document.getElementById('agentFrtBar'),{type:'bar',data:{labels:agentsWithFrt.map(a=>a[0]),datasets:[{data:agentsWithFrt.map(a=>a[1].avg_frt_min),backgroundColor:agentsWithFrt.map(a=>a[1].avg_frt_min<=120?'rgba(61,214,140,.6)':a[1].avg_frt_min<=240?'rgba(240,165,0,.6)':'rgba(232,93,93,.6)'),borderRadius:4}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false},annotation:{annotations:{line1:{type:'line',x:120,borderColor:'rgba(61,214,140,.5)',borderWidth:2,borderDash:[4,4]}}}},scales:{x:{grid:{color:'rgba(42,45,56,.5)'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
+
+// ── Issue Accordion ───────────────────────────────────────────────────
+function buildAccordion(){
+  const wrap=document.getElementById('accordion');
+  const total=D.taxonomy.reduce((a,c)=>a+c.total,0);
+  D.taxonomy.forEach((cat,ci)=>{
+    const pct=((cat.total/total)*100).toFixed(1);
+    const bw=D.taxonomy[0].total>0?Math.round(cat.total/D.taxonomy[0].total*100):0;
+    const maxSub=cat.subs.length>0?cat.subs[0].count:1;
+    const div=document.createElement('div');
+    div.className='acat'+(ci===0?' open':'');
+    div.innerHTML=`
+      <div class="acat-hdr" onclick="toggleCat(this)">
+        <span class="arr">▶</span><span class="cat-n">${cat.name}</span>
+        <div class="cat-bw"><div class="cat-bf" style="width:${bw}%;background:${cat.color}"></div></div>
+        <span class="cat-pct">${pct}%</span>
+        <span class="cat-tot" style="color:${cat.color}">${cat.total.toLocaleString()}</span>
+      </div>
+      <div class="sub-body">
+        ${cat.subs.map((s,si)=>`
+          <div class="srow${si===0&&ci===0?' sopen':''}" id="srow-${ci}-${si}">
+            <div class="srow-hdr" onclick="toggleSub(this,${ci},${si})">
+              <span class="sarr">▶</span><span class="s-ico">${s.icon||'●'}</span>
+              <span class="s-name">${s.name}</span>
+              <div class="s-bw"><div class="s-bf" style="width:${maxSub>0?Math.round(s.count/maxSub*100):0}%;background:${cat.color}"></div></div>
+              <span class="s-cnt">${s.count.toLocaleString()}</span>
+              <span class="stag t${s.tag}">${s.tag==='h'?'HIGH':s.tag==='m'?'MED':'LOW'}</span>
+              <span class="s-action">${s.action}</span>
+            </div>
+            <div class="tickets-panel">
+              <div class="tp-label">Live ticket samples</div>
+              ${s.tickets&&s.tickets.length?s.tickets.filter(t=>t.s).map(t=>`
+                <div class="ticket-card">
+                  <div class="tk-subj">${t.s}</div>
+                  ${t.d?`<div class="tk-desc">${t.d}</div>`:''}
+                </div>`).join(''):'<div style="font-size:11px;color:var(--dim);padding:8px 0">No tickets matched this week</div>'}
+            </div>
+          </div>`).join('')}
+        <div style="margin-top:10px">
+          <div class="mini-label">Weekly trend</div>
+          <canvas id="ct${ci}" height="50"></canvas>
+        </div>
+      </div>`;
+    wrap.appendChild(div);
+    setTimeout(()=>{ new Chart(document.getElementById('ct'+ci),{type:'bar',data:{labels:wl,datasets:[{data:cat.trend,backgroundColor:cat.color+'55',borderColor:cat.color,borderWidth:1,borderRadius:2}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false,beginAtZero:true}}}});},80);
+  });
+  if(D.taxonomy[0]&&D.taxonomy[0].subs[0]) buildTrend(D.taxonomy[0].subs[0].name,D.taxonomy[0].subs[0].trend);
+}
+function buildTrend(name,data){
+  document.getElementById('trendLbl').textContent='Showing: '+name;
+  const ctx=document.getElementById('trendChart').getContext('2d');
+  if(trendChart)trendChart.destroy();
+  trendChart=new Chart(ctx,{type:'line',data:{labels:wl,datasets:[{data,borderColor:'#f0a500',backgroundColor:'rgba(240,165,0,.08)',borderWidth:2,pointRadius:4,fill:true,tension:.35}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(42,45,56,.5)'}},y:{grid:{color:'rgba(42,45,56,.5)'},beginAtZero:true}}}});
+}
+new Chart(document.getElementById('catDistBar'),{type:'bar',data:{labels:D.taxonomy.map(c=>c.name),datasets:[{data:D.taxonomy.map(c=>c.total),backgroundColor:D.taxonomy.map(c=>c.color+'aa'),borderColor:D.taxonomy.map(c=>c.color),borderWidth:1,borderRadius:4}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(42,45,56,.5)'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
+function toggleCat(hdr){const b=hdr.parentElement,was=b.classList.contains('open');document.querySelectorAll('.acat').forEach(x=>x.classList.remove('open'));if(!was)b.classList.add('open');}
+function toggleSub(hdr,ci,si){const sr=hdr.parentElement,was=sr.classList.contains('sopen');hdr.closest('.sub-body').querySelectorAll('.srow').forEach(x=>x.classList.remove('sopen'));if(!was){sr.classList.add('sopen');buildTrend(D.taxonomy[ci].subs[si].name,D.taxonomy[ci].subs[si].trend);}}
+buildAccordion();
+
+// ── Sentiment Tab ─────────────────────────────────────────────────────
+const s=D.sentiment,stot=s.negative+s.positive+s.neutral;
+new Chart(document.getElementById('sentPie'),{type:'doughnut',data:{labels:[`Distressed (${(s.negative/stot*100).toFixed(1)}%)`,`Neutral (${(s.neutral/stot*100).toFixed(1)}%)`,`Positive (${(s.positive/stot*100).toFixed(1)}%)`],datasets:[{data:[s.negative,s.neutral,s.positive],backgroundColor:['#e85d5d','#5b8af0','#3dd68c'],borderWidth:0}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{padding:14,boxWidth:12}}},cutout:'60%'}});
+document.getElementById('sentGapBars').innerHTML=[{l:'Distressed',v:s.negative,c:'var(--r)'},{l:'Neutral',v:s.neutral,c:'var(--b)'},{l:'Positive',v:s.positive,c:'var(--g)'}].map(r=>`<div><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:12px;color:var(--muted)">${r.l}</span><span style="font-family:'DM Mono',monospace;font-size:12px;color:${r.c}">${r.v.toLocaleString()}</span></div><div style="height:7px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;width:${(r.v/stot*100).toFixed(1)}%;background:${r.c};border-radius:4px"></div></div></div>`).join('');
+
+// ── Timeline Tab ──────────────────────────────────────────────────────
+const dd=D.daily.values,dl=D.daily.labels;
+const ma=dd.map((_,i)=>{const sl=dd.slice(Math.max(0,i-2),i+3);return Math.round(sl.reduce((a,b)=>a+b,0)/sl.length)});
+new Chart(document.getElementById('tlChart'),{type:'bar',data:{labels:dl,datasets:[{type:'bar',data:dd,backgroundColor:'rgba(240,165,0,.3)',borderColor:'rgba(240,165,0,.5)',borderWidth:1,borderRadius:2},{type:'line',data:ma,borderColor:'#5b8af0',borderWidth:2,pointRadius:0,tension:.4,backgroundColor:'transparent'}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(42,45,56,.5)'},beginAtZero:true}}}});
+const dw=D.dept_weekly,dc5=['#f0a500','#3dd68c','#5b8af0','#e85d5d','#c77dff'];
+new Chart(document.getElementById('agentWk'),{type:'line',data:{labels:wl,datasets:Object.entries(dw).slice(0,5).map(([n,d],i)=>({label:n,data:d,borderColor:dc5[i],backgroundColor:'transparent',borderWidth:2,pointRadius:3,tension:.3}))},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:10,font:{size:10}}}},scales:{x:{grid:{color:'rgba(42,45,56,.5)'}},y:{grid:{color:'rgba(42,45,56,.5)'},beginAtZero:true}}}});
+const hm=document.getElementById('heatmap');const mxD=Math.max(...dd);
+dl.forEach((l,i)=>{const pt=dd[i]/mxD;const op=0.12+pt*.75;hm.innerHTML+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);width:50px">${l}</span><div style="flex:1;height:22px;background:rgba(240,165,0,${op});border-radius:4px;display:flex;align-items:center;padding:0 10px"><span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.85)">${dd[i]}</span></div></div>`;});
+
+// ── Suggestions ───────────────────────────────────────────────────────
+const sugs=[
+  {p:'p1',pc:'#e85d5d',title:'Proactive SIP Failure Alerts',why:'SIP failures and mandate issues appear repeatedly in your tickets. Customers only find out after the debit date passes.',action:'T+0 SMS/push when SIP fails with plain-English reason. Add self-service re-debit button in app.',ref:'Groww and Zerodha send failure notifications within 2 hours — reduces SIP support tickets by 60–70%.',effort:'Medium'},
+  {p:'p1',pc:'#e85d5d',title:'Reduce Unassigned Queue (53 tickets)',why:'53 tickets are currently unassigned — these have no FRT measured and likely the worst customer experience.',action:'Set auto-assignment rules in Zoho Desk based on subject keywords routing to the right team.',ref:'Unassigned tickets are the single easiest win — zero tech effort, pure process change.',effort:'Low'},
+  {p:'p1',pc:'#e85d5d',title:'Enable CSAT Surveys',why:'Every ticket shows "Survey not sent" or "No Response" — you have zero customer satisfaction data.',action:'Zoho Desk → Setup → Customer Happiness → Enable. Set trigger: after ticket closed.',ref:'Takes 5 minutes to enable. Industry target: >80% CSAT for MF support platforms.',effort:'Low'},
+  {p:'p2',pc:'#f0a500',title:'Self-Service Profile Updates',why:'Bank activation, account changes, mobile number updates — all require agent touchpoints today.',action:'Build in-app OTP-verified flows for the top 5 update types. Reduces these tickets by ~70%.',ref:'CAMS and KFintech offer nominee update APIs. ET Money handles bank changes fully in-app.',effort:'High'},
+  {p:'p2',pc:'#f0a500',title:'Automated Payout Status Notifications',why:'Redemption queries appear consistently. Customers write in because they don\'t know when to expect credit.',action:'3-step notification: redemption submitted → NAV applied → amount credited. Eliminates follow-up.',ref:'Zerodha sends all three notifications. Reduces payout queries by ~75%.',effort:'Low'},
+  {p:'p3',pc:'#3dd68c',title:'FRT Improvement for Slow Agents',why:`Avg FRT is ${fmtMin(p.avg_frt_min)} — ${p.avg_frt_min>120?'above the 2-hour target. Some agents are significantly slower.':'within target but varies by agent.'}`,action:'Review the Agent View tab. Set Zoho Desk SLA rules to flag tickets with no response after 2 hours.',ref:'SLA breach alerts in Zoho Desk require zero custom development.',effort:'Low'},
+];
+document.getElementById('sugGrid').innerHTML=sugs.map(s=>`
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+    <div style="padding:16px 18px;border-bottom:1px solid var(--border)">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:3px;display:inline-block;margin-bottom:8px;background:${s.pc}22;color:${s.pc}">${s.p==='p1'?'🔴 Priority 1':s.p==='p2'?'🟡 Priority 2':'🟢 Priority 3'}</div>
+      <div style="font-size:15px;font-weight:700;margin-bottom:4px">${s.title}</div>
+      <div style="font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 8px;display:inline-block">Effort: ${s.effort}</div>
+    </div>
+    <div style="padding:14px 18px;display:flex;flex-direction:column;gap:10px">
+      <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--dim);margin-bottom:4px">Why this week's data shows it</div><div style="font-size:12px;color:var(--muted);line-height:1.5">${s.why}</div></div>
+      <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--dim);margin-bottom:4px">Recommended action</div><div style="font-size:12px;color:var(--text);line-height:1.5">${s.action}</div></div>
+      <div style="background:var(--bg);border-left:3px solid var(--accent);padding:8px 10px;border-radius:0 4px 4px 0;font-size:11px;color:var(--muted);font-style:italic">${s.ref}</div>
+    </div>
+  </div>`).join('');
+
+// ── Tab switch ────────────────────────────────────────────────────────
+function showTab(id,el){document.querySelectorAll('.tc').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.nt').forEach(t=>t.classList.remove('active'));document.getElementById('tab-'+id).classList.add('active');el.classList.add('active');}
+</script>
+</body>
+</html>
